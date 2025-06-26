@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+
+{% block title %}Descargador de Videos y Audio{% endblock %}
+
+{% block content %}
+
+<div class="container my-5">
+  <h1 class="text-center mb-4">Descargar videos o audio</h1>
+
+  <div class="d-flex justify-content-center mb-4 fs-4 text-secondary">
+    <i class="fab fa-youtube mx-3" title="YouTube"></i>
+    <i class="fab fa-vimeo-v mx-3" title="Vimeo"></i>
+    <i class="fab fa-facebook mx-3" title="Facebook"></i>
+    <i class="fab fa-instagram mx-3" title="Instagram"></i>
+    <i class="fab fa-twitter mx-3" title="Twitter"></i>
+    <i class="fab fa-tiktok mx-3" title="TikTok"></i>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-md-12">
+      <form
+        id="downloadForm"
+        method="post"
+        action="{% url 'app:descargar_video' %}"
+        class="mb-4"
+      >
+        {% csrf_token %}
+        <div class="input-group mb-3">
+          <input
+            type="url"
+            name="video_url"
+            class="form-control"
+            placeholder="Introduce la URL"
+            required
+          >
+          <select id="typeSelect" name="tipo" class="form-select">
+            <option value="video" selected>Video</option>
+            <option value="audio">Audio (MP3)</option>
+          </select>
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-primary w-100"
+        >
+          <i class="fas fa-download me-2"></i> Descargar
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('downloadForm');
+  const select = document.getElementById('typeSelect');
+  form.addEventListener('submit', function(e) {
+    if (select.value === 'audio') {
+      form.action = "{% url 'app:descargar_audio' %}";
+    } else {
+      form.action = "{% url 'app:descargar_video' %}";
+    }
+  });
+</script>
+{% endblock %}
