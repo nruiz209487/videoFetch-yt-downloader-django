@@ -161,3 +161,9 @@ class DownloaderWeb:
             shutil.rmtree(temp_dir, ignore_errors=True)
             return {'success': False, 'error': str(e)}
 
+    @staticmethod
+    def limpiar_archivo_temporal(temp_dir):
+        try:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        except:
+            pass
