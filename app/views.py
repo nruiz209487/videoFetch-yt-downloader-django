@@ -11,16 +11,54 @@ import threading
 import time
 import json
 import sys
+import re
 sys.path.append(r'C:\Users\fiero\OneDrive\Documentos\Repos\downloaderWeb')
 from Service.DownloaderWeb import DownloaderWeb 
 
 def home(request):
     return render(request, 'home/homePage.html')
 
+def validate_video_url(url):
+    """Validación simple de URL"""
+    errors = []
+    
+    if not url:
+        errors.append('La URL del video es obligatoria.')
+        return errors
+    
+    # Verificar formato básico de URL
+    if not re.match(r'^https?://', url):
+        errors.append('La URL debe comenzar con http:// o https://')
+    
+    # Lista de dominios soportados
+    dominios_validos = [
+        'youtube.com', 'youtu.be', 'vimeo.com', 'facebook.com',
+        'instagram.com', 'twitter.com', 'tiktok.com', 'dailymotion.com',
+        'twitch.tv', 'streamable.com'
+    ]
+    
+    # Verificar si el dominio está soportado
+    if not any(dominio in url.lower() for dominio in dominios_validos):
+        errors.append('Esta plataforma no está soportada. Prueba con YouTube, Vimeo, Facebook, Instagram, Twitter, TikTok, etc.')
+    
+    # Verificar que no sea una playlist
+    if 'playlist' in url.lower():
+        errors.append('Las listas de reproducción no están soportadas. Por favor, usa el enlace de un video individual.')
+    
+    return errors
+
 def descargar_video(request):
     if request.method == 'POST':
         video_url = request.POST.get('video_url')
         user_info_str = request.POST.get('user_info')
+        
+        # Validar URL
+        validation_errors = validate_video_url(video_url)
+        if validation_errors:
+            for error in validation_errors:
+                messages.error(request, error)
+            return render(request, 'home/homePage.html')
+        
         try:
             user_info = json.loads(user_info_str) if user_info_str else {}
             print("=== USER INFO PARA VIDEO ===")
@@ -32,10 +70,6 @@ def descargar_video(request):
             user_info = {}
             storeUserData(user_info)
         
-        if not video_url:
-            messages.error(request, 'Por favor, introduce una URL válida.')
-            return render(request, 'home/homePage.html')
-            
         try:
             resultado = DownloaderWeb.descargar_video_para_web(video_url)
             
@@ -95,6 +129,13 @@ def descargar_audio(request):
         video_url = request.POST.get('video_url')
         user_info_str = request.POST.get('user_info')
         
+        # Validar URL
+        validation_errors = validate_video_url(video_url)
+        if validation_errors:
+            for error in validation_errors:
+                messages.error(request, error)
+            return render(request, 'home/homePage.html')
+        
         try:
             user_info = json.loads(user_info_str) if user_info_str else {}
             print("=== USER INFO PARA AUDIO ===")
@@ -105,10 +146,6 @@ def descargar_audio(request):
             user_info = {}
             storeUserData(user_info)
 
-        if not video_url:
-            messages.error(request, 'Por favor, introduce una URL válida.')
-            return render(request, 'home/homePage.html')
-            
         try:
             resultado = DownloaderWeb.descargar_audio_para_web(video_url)
             
@@ -170,7 +207,6 @@ def storeUserData(user_info):
         user_ip = user_info.get('user_ip', '0.0.0.0')
         user_agent = user_info.get('browser', '')
         
-r
         browser_info = parse_user_agent(user_agent)
 
         user_download = UserDownload.objects.create(
