@@ -1,9 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.http import FileResponse
+from django.http import FileResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
+from django.urls import reverse
 from .models import UserDownload
 import os
 import mimetypes
@@ -12,8 +13,9 @@ import time
 import json
 import sys
 import re
-sys.path.append(r'C:\Users\fiero\OneDrive\Documentos\Repos\downloaderWeb')
-from Service.DownloaderWeb import DownloaderWeb 
+import uuid
+
+from .service.DownloaderWeb import DownloaderWeb
 
 def home(request):
     return render(request, 'home/homePage.html')
@@ -26,22 +28,18 @@ def validate_video_url(url):
         errors.append('La URL del video es obligatoria.')
         return errors
     
-    # Verificar formato básico de URL
     if not re.match(r'^https?://', url):
         errors.append('La URL debe comenzar con http:// o https://')
     
-    # Lista de dominios soportados
     dominios_validos = [
         'youtube.com', 'youtu.be', 'vimeo.com', 'facebook.com',
         'instagram.com', 'twitter.com', 'tiktok.com', 'dailymotion.com',
         'twitch.tv', 'streamable.com'
     ]
     
-    # Verificar si el dominio está soportado
     if not any(dominio in url.lower() for dominio in dominios_validos):
         errors.append('Esta plataforma no está soportada. Prueba con YouTube, Vimeo, Facebook, Instagram, Twitter, TikTok, etc.')
     
-    # Verificar que no sea una playlist
     if 'playlist' in url.lower():
         errors.append('Las listas de reproducción no están soportadas. Por favor, usa el enlace de un video individual.')
     
@@ -52,18 +50,16 @@ def descargar_video(request):
         video_url = request.POST.get('video_url')
         user_info_str = request.POST.get('user_info')
         
-        # Validar URL
         validation_errors = validate_video_url(video_url)
         if validation_errors:
             for error in validation_errors:
                 messages.error(request, error)
-            return render(request, 'home/homePage.html')
+            return redirect('home') 
         
         try:
             user_info = json.loads(user_info_str) if user_info_str else {}
             print("=== USER INFO PARA VIDEO ===")
             print(json.dumps(user_info, indent=2))
-
             storeUserData(user_info)
         except json.JSONDecodeError:
             print("Error al decodificar user_info para video, usando dict vacío.")
@@ -97,6 +93,7 @@ def descargar_video(request):
                     if not content_type:
                         content_type = 'video/mp4'
                     
+             
                     response = FileResponse(
                         open(file_path, 'rb'),
                         content_type=content_type,
@@ -112,6 +109,9 @@ def descargar_video(request):
                     thread.daemon = True
                     thread.start()
                     
+                  
+                    messages.success(request, f'Video "{resultado.get("title", "Video")}" descargado exitosamente.')
+                    
                     return response
                 else:
                     raise Exception("El archivo descargado no se encontró.")
@@ -122,19 +122,19 @@ def descargar_video(request):
             messages.error(request, f'Error al procesar la descarga: {str(e)}')
             print(f"Error en descarga de video: {e}")
     
-    return render(request, 'home/homePage.html')
+    return redirect('home')
 
 def descargar_audio(request):
     if request.method == 'POST':
         video_url = request.POST.get('video_url')
+        videoQuality = request.POST.get('videoQuality')
         user_info_str = request.POST.get('user_info')
         
-        # Validar URL
         validation_errors = validate_video_url(video_url)
         if validation_errors:
             for error in validation_errors:
                 messages.error(request, error)
-            return render(request, 'home/homePage.html')
+            return redirect('home') 
         
         try:
             user_info = json.loads(user_info_str) if user_info_str else {}
@@ -184,6 +184,8 @@ def descargar_audio(request):
                     thread.daemon = True
                     thread.start()
                     
+                    messages.success(request, f'Audio "{resultado.get("title", "Audio")}" descargado exitosamente.')
+                    
                     return response
                 else:
                     raise Exception("El archivo de audio no se encontró.")
@@ -193,8 +195,8 @@ def descargar_audio(request):
         except Exception as e:
             messages.error(request, f'Error al procesar la descarga de audio: {str(e)}')
             print(f"Error en descarga de audio: {e}")
-    
-    return render(request, 'home/homePage.html')
+
+    return redirect('home')
 
 
 def storeUserData(user_info):
@@ -203,21 +205,18 @@ def storeUserData(user_info):
     print(json.dumps(user_info, indent=2))
     
     try:
-
         user_ip = user_info.get('user_ip', '0.0.0.0')
         user_agent = user_info.get('browser', '')
         
         browser_info = parse_user_agent(user_agent)
 
         user_download = UserDownload.objects.create(
-   
             title=user_info.get('title', 'Unknown'),
             videoSlug=user_info.get('video_slug', 'unknown'),
             video_url=user_info.get('video_url', ''),
             format=user_info.get('format', 'video'),
             quality=user_info.get('quality', 'high'),
             
-  
             user_ip=user_ip,
             user_agent=user_agent,
             browser_name=browser_info.get('name', ''),
@@ -225,17 +224,14 @@ def storeUserData(user_info):
             operating_system=browser_info.get('os', ''),
             device_type=browser_info.get('device_type', ''),
             
-
             language=user_info.get('language', ''),
             timezone=user_info.get('user_timezone', user_info.get('timezone', '')),
             screen_resolution=user_info.get('screen_resolution', ''),
             viewport_size=user_info.get('viewport_size', ''),
             
-   
             connection_type=user_info.get('connection_type', ''),
             download_speed=user_info.get('download_speed', ''),
             
-   
             session_duration=user_info.get('session_duration', 0),
             page_views=user_info.get('page_views', 1),
             referrer=user_info.get('referrer', ''),
@@ -260,15 +256,12 @@ def storeUserData(user_info):
         print(f"   - Datos que causaron el error: {user_info}")
         return None
 
-
 def parse_user_agent(user_agent):
-    """Función mejorada para parsear el user agent"""
     if not user_agent:
         return {'name': '', 'version': '', 'os': '', 'device_type': 'desktop'}
     
     ua = user_agent.lower()
     
-
     if 'edg' in ua: 
         browser = 'Edge'
     elif 'chrome' in ua and 'chromium' not in ua:
@@ -297,7 +290,6 @@ def parse_user_agent(user_agent):
     else:
         os_name = 'Unknown'
     
-
     if any(x in ua for x in ['mobile', 'android', 'iphone']):
         device_type = 'mobile'
     elif 'tablet' in ua or 'ipad' in ua:

@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class DownloaderWeb:
-    """Versión del descargador adaptada para Django - descarga y retorna el archivo el cambio esta en el uso de capetas temporales el vido se descarga en lcoal y se envia el archivo temporal"""
+    """Versión del descargador adaptada para Django - descarga y retorna el archivo"""
     
     FFMPEG_DOMINIOS = ["youtube.com", "youtu.be"]
     SIMPLE_DOMINIOS = ["tiktok.com", "instagram.com", "facebook.com"]
@@ -51,15 +51,15 @@ class DownloaderWeb:
                                 'file_path': ruta_archivo,
                                 'filename': nombre_archivo,
                                 'title': info.get('title', 'video'),
-                                'temp_dir': temp_dir
+                                'temp_dir': temp_dir  
                             }
                     
+            shutil.rmtree(temp_dir, ignore_errors=True)
             return {'success': False, 'error': 'No se encontró el archivo descargado'}
 
         except Exception as e:
             shutil.rmtree(temp_dir, ignore_errors=True)
             return {'success': False, 'error': str(e)}
-
 
     @staticmethod
     def descargar_video_con_ffmpeg_web(url):
@@ -106,9 +106,11 @@ class DownloaderWeb:
                         'file_path': ruta_archivo,
                         'filename': nombre_archivo,
                         'title': info.get('title', 'video'),
-                        'temp_dir': temp_dir
+                        'temp_dir': temp_dir  
                     }
 
+
+            shutil.rmtree(temp_dir, ignore_errors=True)
             return {'success': False, 'error': 'No se encontró el archivo descargado'}
 
         except Exception as e:
@@ -143,7 +145,7 @@ class DownloaderWeb:
                 if info:
                     titulo_limpio = re.sub(r'[\\/*?:"<>|]', "", info.get('title', 'audio'))
                     nombre_archivo = f"{titulo_limpio}.mp3"
-                    
+                    print(f"Descargando audio: {nombre_archivo}")
                     for archivo in os.listdir(temp_dir):
                         if archivo.endswith('.mp3'):
                             ruta_archivo = os.path.join(temp_dir, archivo)
@@ -155,6 +157,7 @@ class DownloaderWeb:
                                 'temp_dir': temp_dir
                             }
                     
+            shutil.rmtree(temp_dir, ignore_errors=True)
             return {'success': False, 'error': 'No se encontró el archivo de audio descargado'}
             
         except Exception as e:
@@ -163,7 +166,10 @@ class DownloaderWeb:
 
     @staticmethod
     def limpiar_archivo_temporal(temp_dir):
+        """Método para limpiar el directorio temporal después de usar el archivo"""
         try:
-            shutil.rmtree(temp_dir, ignore_errors=True)
-        except:
+            if temp_dir and os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
+        except Exception as e:
+            print(f"Error al limpiar directorio temporal: {e}")
             pass
