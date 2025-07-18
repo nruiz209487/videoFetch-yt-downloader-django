@@ -1,0 +1,16 @@
+# Ignorar archivos de base de datos SQLite
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+
+# Ignorar archivos de respaldo o temporales
+*.sql-journal
+*.db-journal
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Ignorar archivos de configuración local
+.env
+*.log

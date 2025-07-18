@@ -21,7 +21,6 @@ def home(request):
     return render(request, 'home/homePage.html')
 
 def validate_video_url(url):
-    """Validación simple de URL"""
     errors = []
     
     if not url:
@@ -45,6 +44,13 @@ def validate_video_url(url):
     
     return errors
 
+def safe_redirect_to_home(request):
+    """Función helper para redireccionar de forma segura al home"""
+    try:
+        return redirect('home')
+    except:
+        return redirect('/')
+
 def descargar_video(request):
     if request.method == 'POST':
         video_url = request.POST.get('video_url')
@@ -54,20 +60,31 @@ def descargar_video(request):
         if validation_errors:
             for error in validation_errors:
                 messages.error(request, error)
-            return redirect('home') 
+            return safe_redirect_to_home(request)
         
         try:
             user_info = json.loads(user_info_str) if user_info_str else {}
-            print("=== USER INFO PARA VIDEO ===")
+            print("=== USER INFO PARA DESCARGA ===")
             print(json.dumps(user_info, indent=2))
             storeUserData(user_info)
         except json.JSONDecodeError:
-            print("Error al decodificar user_info para video, usando dict vacío.")
+            print("Error al decodificar user_info para descarga, usando dict vacío.")
             user_info = {}
             storeUserData(user_info)
         
+        format_requested = user_info.get('format', 'video')
+        
         try:
-            resultado = DownloaderWeb.descargar_video_para_web(video_url)
+            if format_requested == 'audio':
+                resultado = DownloaderWeb.descargar_audio_para_web(video_url)
+                content_type = 'audio/mpeg'
+                success_message = f'Audio "{resultado.get("title", "Audio")}" descargado exitosamente.'
+            else:
+                resultado = DownloaderWeb.descargar_video_para_web(video_url)
+                content_type, _ = mimetypes.guess_type(resultado.get('file_path', ''))
+                if not content_type:
+                    content_type = 'video/mp4'
+                success_message = f'Video "{resultado.get("title", "Video")}" descargado exitosamente.'
             
             if resultado['success']:
                 file_path = resultado['file_path']
@@ -83,17 +100,12 @@ def descargar_video(request):
                         
                         if recent_download:
                             recent_download.download_successful = True
-                            recent_download.title = resultado.get('title', 'Video Downloaded')
+                            recent_download.title = resultado.get('title', 'Downloaded')
                             recent_download.save()
                 except Exception as e:
                     print(f"Error actualizando registro de descarga: {e}")
                 
                 if os.path.exists(file_path):
-                    content_type, _ = mimetypes.guess_type(file_path)
-                    if not content_type:
-                        content_type = 'video/mp4'
-                    
-             
                     response = FileResponse(
                         open(file_path, 'rb'),
                         content_type=content_type,
@@ -109,20 +121,20 @@ def descargar_video(request):
                     thread.daemon = True
                     thread.start()
                     
-                  
-                    messages.success(request, f'Video "{resultado.get("title", "Video")}" descargado exitosamente.')
-                    
+                    messages.success(request, success_message)
                     return response
                 else:
                     raise Exception("El archivo descargado no se encontró.")
             else:
-                messages.error(request, f'Error al descargar el video: {resultado["error"]}')
+                error_message = f'Error al descargar el {"audio" if format_requested == "audio" else "video"}: {resultado["error"]}'
+                messages.error(request, error_message)
                 
         except Exception as e:
-            messages.error(request, f'Error al procesar la descarga: {str(e)}')
-            print(f"Error en descarga de video: {e}")
+            error_message = f'Error al procesar la descarga de {"audio" if format_requested == "audio" else "video"}: {str(e)}'
+            messages.error(request, error_message)
+            print(f"Error en descarga: {e}")
     
-    return redirect('home')
+    return safe_redirect_to_home(request)
 
 def descargar_audio(request):
     if request.method == 'POST':
@@ -134,7 +146,7 @@ def descargar_audio(request):
         if validation_errors:
             for error in validation_errors:
                 messages.error(request, error)
-            return redirect('home') 
+            return safe_redirect_to_home(request)
         
         try:
             user_info = json.loads(user_info_str) if user_info_str else {}
@@ -196,7 +208,7 @@ def descargar_audio(request):
             messages.error(request, f'Error al procesar la descarga de audio: {str(e)}')
             print(f"Error en descarga de audio: {e}")
 
-    return redirect('home')
+    return safe_redirect_to_home(request)
 
 
 def storeUserData(user_info):
