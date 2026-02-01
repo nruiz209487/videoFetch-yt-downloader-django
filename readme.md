@@ -36,3 +36,5 @@ python manage.py createsuperuser
 
 # Ejecuta servidor de desarrollo
 python manage.py runserver
+
+![1752834663308](https://github.com/user-attachments/assets/7dbe2233-7d71-4791-bd17-bfdebb722368)
