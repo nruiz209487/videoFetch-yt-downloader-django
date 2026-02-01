@@ -1,5 +1,7 @@
 # videoFetch-yt-downloader-django
 
+![1752834663308](https://github.com/user-attachments/assets/71e67f46-b898-4dbe-ab57-a6ba232e85bb)
+
 Proyecto Django  para descargar videos usando yt-dlp.La página recopila datos sensibles como IP y ubicación del usuario, lo que infringe varias leyes europeas de privacidad (sí, GDPR te está mirando), por lo que nunca estara ni ha estado desplegada.
 
 ## Importante
@@ -36,5 +38,3 @@ python manage.py createsuperuser
 
 # Ejecuta servidor de desarrollo
 python manage.py runserver
-
-![1752834663308](https://github.com/user-attachments/assets/7dbe2233-7d71-4791-bd17-bfdebb722368)
